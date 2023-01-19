@@ -90,6 +90,23 @@
       </div>
     </form>
   </div>
+
+  <div class="modal" tabindex="-1" id="error_modal">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Apologies Please Wait</h5>
+          <button type="button" class="btn-close" id="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>{{this.error}}</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-cancel-yes"  data-bs-dismiss="modal">Ok</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -111,11 +128,12 @@ export default {
         userId : '',
       },
       search_by : 'cnic',
+      error : 'Error occur',
     }
   },
   methods :{
     async creatAppointment() {
-      await creatAppointment(this.form);
+       await creatAppointment(this.form);
     },
     async searchPatient() {
       let details = null;
@@ -132,7 +150,7 @@ export default {
         this.form.cnic = details.data.cnic;
         this.form.patient_name = details.data.name;
         this.form.phone = details.data.phone;
-        this.form.userId = details.data.userId;
+        this.form.userId = details.data.patientId;
       }
     }
   }

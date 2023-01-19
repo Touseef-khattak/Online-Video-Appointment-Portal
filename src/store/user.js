@@ -45,9 +45,8 @@ export const useUserStore = defineStore("user", {
                      localStorage.setItem('user', JSON.stringify(this.user));
                      router.push({ name: "list" });
                  }else{
-                     console.log("ERROR" + res);
+                     return res;
                  }
-
              })
         },
         logout() {

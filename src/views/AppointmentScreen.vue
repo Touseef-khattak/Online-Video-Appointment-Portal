@@ -16,8 +16,9 @@
           </div>
         </div>
         <div class="icon_container d-flex" v-if="connected">
-          <button @click="audiotoggle">
-            <img :src="'@/assets/' + this.audio_icon" alt="" width="25">
+          <button>
+<!--            <img v-if="this.audio_icon == 'unblock'" src="@/assets/microphone.svg" alt="" width="25">-->
+            <img v-if="this.audio_icon == 'block'" src="@/assets/microphone_block.svg" alt="" width="25">
           </button>
           <button>
             <img src="@/assets/video_icon.svg" alt="" width="25">
@@ -49,9 +50,9 @@ export default {
       OT : require('@opentok/client'),
       connected : false,
       subscriber : false,
-      publisher : null,
+      myPublisher : null,
       mySession: null,
-      audio_icon: '/microphone.svg'
+      audio_icon: 'block'
     }
   },
   mounted() {
@@ -127,7 +128,7 @@ export default {
 
       };
       var publisher = this.OT.initPublisher('publisher', publisherOptions);
-      this.publisher = publisher;
+      // this.myPublisher = publisher;
       // Connect to the session
       session.connect(this.TOKEN, function callback(error) {
             if (error) {
@@ -140,28 +141,21 @@ export default {
             }
           }
       )
-      publisher.on({
-        audioBlocked: function() {
-          console.log('Audio Blocked');
-        },
-        audioUnblocked: function() {
-          console.log('Audio unblocked');
-        }
-      })
     },
     endCall(){
       this.mySession.disconnect();
     },
-    audiotoggle(me){
-      if(me.classList.contains('audio_blocked')){
-        this.publisher.audioUnblocked();
-        this.audio_icon = 'microphone.svg';
-      }else{
-        me.classList.add('audio_blocked')
-        this.publisher.audioBlocked();
-        this.audio_icon = 'microphone_block.svg';
-      }
-    }
+    // audiotoggle(){
+    //   if(event.target.classList.contains('audio_blocked')){
+    //     event.target.classList.remove('audio_blocked')
+    //     this.audio_icon = 'unblock';
+    //     this.mySession.audioUnblocked();
+    //   }else{
+    //     event.target.classList.add('audio_blocked')
+    //     this.audio_icon = 'block';
+    //     this.mySession.audioBlocked();
+    //   }
+    // }
   }
 }
 
