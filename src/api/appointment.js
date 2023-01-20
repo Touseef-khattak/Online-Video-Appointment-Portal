@@ -17,7 +17,7 @@ async function creatAppointment(data) {
             "professionalId": null,
             "appointmentType": "FORI_DOC",
             "appointmentFor": data.appointment_for.toUpperCase(),
-            "patientFullName": data.appointment_for.toUpperCase() == 'SELF' ? userStore.user.firstName +" "+userStore.user.lastName : data.for_patient_name,
+            "patientFullName": data.appointment_for.toUpperCase() == 'SELF' ? data.patient_name : data.for_patient_name,
             "providerStaffLocationId": null,
             "appointmentServices": [],
             "otherDetails": "ICTP"
@@ -80,6 +80,23 @@ async function creatAppointment(data) {
     });
 }
 
+async function getAllAppointmentPaginate(status,perPage,page) {
+    const userStore = useUserStore();
+    let AllAppointments = await fetch(process.env.VUE_APP_API_URL + 'v2/patientByEmployer/appointments/fetchAppointments?type=ALL&status='+status+'&pageNumber='+page+'&numberOfRecordsPerPage='+perPage, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "auth-token": userStore.user.token,
+        }
+    }).then(async function (res) {
+        return await res.json();
+    }).catch(error => {
+        return error;
+    });
+
+    return AllAppointments.data;
+}
+
 async function getAllAppointment(){
     const userStore = useUserStore();
     let AllAppointments = await fetch(process.env.VUE_APP_API_URL + process.env.VUE_APP_APPOINTMENT_LIST_URL, {
@@ -137,6 +154,7 @@ async function getAllAppointment(){
         Unscheduled : Unscheduled
     };
 }
+
 async function cancelAppointment(appointmentId){
     const userStore = useUserStore();
     let CancelAppointment = await fetch(process.env.VUE_APP_API_URL + 'v2/appointment/' + appointmentId + '/status/cancel/updateAppointmentStatus', {
@@ -204,7 +222,7 @@ async function getPatientDetails(data){
 
 async function generateReport(appointmentId){
     const userStore = useUserStore();
-    let CancelAppointment = await fetch(process.env.VUE_APP_API_URL + 'v2/appointment/'+appointmentId+'/generate-prescription-report', {
+    let fileID = await fetch(process.env.VUE_APP_API_URL + 'v2/appointment/'+appointmentId+'/generate-prescription-report', {
         method: "GET",
         headers: {
             "auth-token" : userStore.user.token,
@@ -215,7 +233,20 @@ async function generateReport(appointmentId){
         return error;
     });
 
-    return CancelAppointment;
+    let report = await fetch(process.env.VUE_APP_API_URL + process.env.VUE_APP_GET_PRESCRIPTION +fileID.data, {
+        method: "GET",
+        headers: {
+            "auth-token" : userStore.user.token,
+        }
+    }).then(async function (res) {
+        return await res.json();
+    }).catch(error=>{
+        return error;
+    });
+
+    return report;
+
+
 }
 
 async function getAllNotifications(){
@@ -243,5 +274,6 @@ export {
     updateAppointmentStatus,
     leaveAppointment,
     getAllNotifications,
-    generateReport
+    generateReport,
+    getAllAppointmentPaginate
 }

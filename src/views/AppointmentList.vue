@@ -1,26 +1,35 @@
 <template>
   <div class="container">
-      <div class="employes_list_container">
+      <div v-if="!this.appointments" class="loader">
+        <svg height="0" width="0">
+          <defs>
+            <filter color-interpolation-filters="sRGB" height="200%" y="-50%" width="200%" x="-50%" id="goo">
+              <feGaussianBlur result="blur" stdDeviation="8" in="SourceGraphic"></feGaussianBlur>
+              <feColorMatrix result="cm" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 21 -7" mode="matrix" in="blur"></feColorMatrix>
+            </filter>
+          </defs>
+        </svg>
+
+        <svg height="180" width="320" viewBox="0 0 320 180">
+          <g filter="url(#goo)">
+            <circle cy="90" cx="160" r="24" fill="#101841" class="circle"></circle>
+            <circle cy="90" cx="160" r="24" fill="#101841" class="circle right"></circle>
+          </g>
+        </svg>
+      </div>
+      <div v-if="this.appointments != null" class="employes_list_container">
         <div class="list_header">
             <span>Appointments(144)</span>
           <a href="/add">+ Create New Appointment</a>
         </div>
         <ul class="nav nav-pills mb-5 pb-2" id="pills-tab" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="pills-home-tab" data-bs-toggle="pill" data-bs-target="#pills-home" type="button" role="tab" aria-controls="pills-home" aria-selected="true">All</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="pills-New-tab" data-bs-toggle="pill" data-bs-target="#pills-New" type="button" role="tab" aria-controls="pills-New" aria-selected="true">New</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill" data-bs-target="#pills-profile" type="button" role="tab" aria-controls="pills-profile" aria-selected="false">Completed</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill" data-bs-target="#pills-contact" type="button" role="tab" aria-controls="pills-contact" aria-selected="false">Cancelled</button>
-          </li>
+            <button @click="appointmentStatus" class="nav-link ALL" :class="this.status == 'ALL'?'active':''">All</button>
+            <button @click="appointmentStatus" class="nav-link UNSCHEDULED" :class="this.status == 'UNSCHEDULED'?'active':''">New</button>
+            <button @click="appointmentStatus" class="nav-link COMPLETE" :class="this.status == 'COMPLETE'?'active':''">Completed</button>
+            <button @click="appointmentStatus" class="nav-link CANCELLED" :class="this.status == 'CANCELLED'?'active':''">Cancelled</button>
         </ul>
         <div class="tab-content" id="pills-tabContent">
-          <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
+          <div class="tab-pane fade show active position-relative" id="appointments_table">
             <table class="table text-start">
               <thead>
                 <tr>
@@ -33,7 +42,7 @@
                   <th>Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody v-if="!this.internal_loader">
               <tr v-for="item in this.appointments" :key="item.serAppointmentId">
                 <td>{{item.patientName}}</td>
                 <td>{{item.phonemobile}}</td>
@@ -56,194 +65,44 @@
               </tbody>
               <tfoot>
                 <tr>
-                  <td>
-                    <button class="btn_next">
-                      <img src="@/assets/arrow-left.svg" alt="Arrow" width="20">
-                      Previous
-                    </button>
-                  </td>
-                  <td colspan="5">
-                      <div class="pagination d-flex justify-content-center">
-                        1 2 3 4
-                      </div>
-                  </td>
-                  <td>
-                    <button class="btn_previous">
-                      Next
-                      <img src="@/assets/arrow-right.svg" alt="Arrow" width="20">
-                    </button>
-                  </td>
+                  <pagination :total="total" v-model="page"></pagination>
+<!--                  <td>-->
+<!--                    <button class="btn_next">-->
+<!--                      <img src="@/assets/arrow-left.svg" alt="Arrow" width="20">-->
+<!--                      Previous-->
+<!--                    </button>-->
+<!--                  </td>-->
+<!--                  <td colspan="5">-->
+<!--                      <div class="pagination d-flex justify-content-center">-->
+<!--                        1 2 3 4-->
+<!--                      </div>-->
+<!--                  </td>-->
+<!--                  <td>-->
+<!--                    <button class="btn_previous">-->
+<!--                      Next-->
+<!--                      <img src="@/assets/arrow-right.svg" alt="Arrow" width="20">-->
+<!--                    </button>-->
+<!--                  </td>-->
                 </tr>
               </tfoot>
             </table>
           </div>
-          <div class="tab-pane fade" id="pills-New" role="tabpanel" aria-labelledby="pills-New-tab">
-            <table class="table text-start">
-              <thead>
-              <tr>
-                <th>Patient Name</th>
-                <th>Mobile number</th>
-                <th>Appointment for</th>
-                <th>Creation date & time</th>
-                <th>Status</th>
-                <th>Prescription</th>
-                <th>Actions</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr v-for="item in this.new" :key="item.serAppointmentId">
-                <td>{{item.patientName}}</td>
-                <td>{{item.phonemobile}}</td>
-                <td class="light">Myself</td>
-                <td class="light">{{item.dteCreatedDate}}</td>
-                <td>
-                  <span class="status_new">New</span>
-                </td>
-                <td>
-                  <p>---</p>
-                </td>
-                <td>
-                  <button @click="functionCall(this,item.serAppointmentId)" :class="item.txtStatus == 'un-scheduled' ? 'btn_start' : item.txtStatus == 'check-in' ? 'btn_resume' :item.txtStatus == 'complete' || item.txtStatus == 'cancel' ? 'd-none' : ''">{{item.txtStatus == 'un-scheduled' ? 'Start' : item.txtStatus == 'check-in' ? 'Resume' : ''}}</button>
-                  <button class="btn_cancel" :class="item.txtStatus == 'complete' || item.txtStatus == 'cancel' ? 'd-none' : ''" @click="sendData(item.serAppointmentId)" data-bs-toggle="modal" data-bs-target="#appointment_cancel_modal">Cancel</button>
-                </td>
-              </tr>
-              </tbody>
-              <tfoot>
-              <tr>
-                <td>
-                  <button class="btn_next">
-                    <img src="@/assets/arrow-left.svg" alt="Arrow" width="20">
-                    Previous
-                  </button>
-                </td>
-                <td colspan="5">
-                  <div class="pagination d-flex justify-content-center">
-                    1 2 3 4
-                  </div>
-                </td>
-                <td>
-                  <button class="btn_previous">
-                    Next
-                    <img src="@/assets/arrow-right.svg" alt="Arrow" width="20">
-                  </button>
-                </td>
-              </tr>
-              </tfoot>
-            </table>
-          </div>
-          <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab">
-            <table class="table text-start">
-              <thead>
-              <tr>
-                <th>Patient Name</th>
-                <th>Mobile number</th>
-                <th>Appointment for</th>
-                <th>Creation date & time</th>
-                <th>Status</th>
-                <th>Prescription</th>
-                <th>Actions</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr v-for="item in this.completed" :key="item.serAppointmentId">
-                <td>{{item.patientName}}</td>
-                <td>{{item.phonemobile}}</td>
-                <td class="light">Myself</td>
-                <td class="light">{{item.dteCreatedDate}}</td>
-                <td>
-                  <span :class="item.txtStatus == 'un-scheduled' ? 'status_new' : item.txtStatus == 'inprogress' ? 'status_inprogress' : item.txtStatus == 'complete' ? 'status_completed' : item.txtStatus == 'cancel' ? 'status_cancel' : item.txtStatus == 'check-in' ? 'status_inprogress' : ''">{{item.txtStatus.toUpperCase()}}</span>
-                </td>
-                <td>
-                  <button class="btn_print" :class="item.txtStatus != 'complete' ? 'd-none' : ''" @click="printReport(item.serAppointmentId)">
-                    <img src="../assets/print.svg" alt="">
-                  </button>
-                  <p :class="item.txtStatus == 'complete' ? 'd-none' : ''">---</p>
-                </td>
-                <td>
-                  <button @click="functionCall(this,item.serAppointmentId)" :class="item.txtStatus == 'un-scheduled' ? 'btn_start' : item.txtStatus == 'check-in' ? 'btn_resume' :item.txtStatus == 'complete' || item.txtStatus == 'cancel' ? 'd-none' : ''">{{item.txtStatus == 'un-scheduled' ? 'Start' : item.txtStatus == 'check-in' ? 'Resume' : ''}}</button>
-                  <button class="btn_cancel" :class="item.txtStatus == 'complete' || item.txtStatus == 'cancel' ? 'd-none' : ''" @click="sendData(item.serAppointmentId)" data-bs-toggle="modal" data-bs-target="#appointment_cancel_modal">Cancel</button>
-                </td>
-              </tr>
-              </tbody>
-              <tfoot>
-              <tr>
-                <td>
-                  <button class="btn_next">
-                    <img src="@/assets/arrow-left.svg" alt="Arrow" width="20">
-                    Previous
-                  </button>
-                </td>
-                <td colspan="5">
-                  <div class="pagination d-flex justify-content-center">
-                    1 2 3 4
-                  </div>
-                </td>
-                <td>
-                  <button class="btn_previous">
-                    Next
-                    <img src="@/assets/arrow-right.svg" alt="Arrow" width="20">
-                  </button>
-                </td>
-              </tr>
-              </tfoot>
-            </table>
-          </div>
-          <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab">
-            <table class="table text-start">
-              <thead>
-              <tr>
-                <th>Patient Name</th>
-                <th>Mobile number</th>
-                <th>Appointment for</th>
-                <th>Creation date & time</th>
-                <th>Status</th>
-                <th>Prescription</th>
-                <th>Actions</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr v-for="item in this.canceled" :key="item.serAppointmentId">
-                <td>{{item.patientName}}</td>
-                <td>{{item.phonemobile}}</td>
-                <td class="light">Myself</td>
-                <td class="light">{{item.dteCreatedDate}}</td>
-                <td>
-                  <span :class="item.txtStatus == 'un-scheduled' ? 'status_new' : item.txtStatus == 'acquired' ? 'status_inprogress' : item.txtStatus == 'complete' ? 'status_completed' : item.txtStatus == 'cancel' ? 'status_cancel' : item.txtStatus == 'check-in' ? 'status_inprogress' : ''">{{item.txtStatus.toUpperCase()}}</span>
-                </td>
-                <td>
-                  <button class="btn_print" :class="item.txtStatus != 'complete' ? 'd-none' : ''" @click="printReport(item.serAppointmentId)">
-                    <img src="../assets/print.svg" alt="">
-                  </button>
-                  <p :class="item.txtStatus == 'complete' ? 'd-none' : ''">---</p>
-                </td>
-                <td>
-                  <button @click="functionCall(this,item.serAppointmentId)" :class="item.txtStatus == 'un-scheduled' ? 'btn_start' : item.txtStatus == 'check-in' || item.txtStatus == 'acquired' ? 'btn_resume' :item.txtStatus == 'complete' || item.txtStatus == 'cancel' ? 'd-none' : ''">{{item.txtStatus == 'un-scheduled' ? 'Start' : item.txtStatus == 'check-in' || item.txtStatus == 'acquired' ? 'Resume' : ''}}</button>
-                  <button class="btn_cancel" :class="item.txtStatus == 'complete' || item.txtStatus == 'cancel' ? 'd-none' : ''" @click="sendData(item.serAppointmentId)" data-bs-toggle="modal" data-bs-target="#appointment_cancel_modal">Cancel</button>
-                </td>
-              </tr>
-              </tbody>
-              <tfoot>
-              <tr>
-                <td>
-                  <button class="btn_next">
-                    <img src="@/assets/arrow-left.svg" alt="Arrow" width="20">
-                    Previous
-                  </button>
-                </td>
-                <td colspan="5">
-                  <div class="pagination d-flex justify-content-center">
-                    1 2 3 4
-                  </div>
-                </td>
-                <td>
-                  <button class="btn_previous">
-                    Next
-                    <img src="@/assets/arrow-right.svg" alt="Arrow" width="20">
-                  </button>
-                </td>
-              </tr>
-              </tfoot>
-            </table>
+          <div v-if="this.internal_loader" class="internal_loader loader w-100 position-absolute">
+            <svg height="0" width="0">
+              <defs>
+                <filter color-interpolation-filters="sRGB" height="200%" y="-50%" width="200%" x="-50%" id="goo">
+                  <feGaussianBlur result="blur" stdDeviation="8" in="SourceGraphic"></feGaussianBlur>
+                  <feColorMatrix result="cm" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 21 -7" mode="matrix" in="blur"></feColorMatrix>
+                </filter>
+              </defs>
+            </svg>
+
+            <svg height="180" width="320" viewBox="0 0 320 180">
+              <g filter="url(#goo)">
+                <circle cy="90" cx="160" r="24" fill="#101841" class="circle"></circle>
+                <circle cy="90" cx="160" r="24" fill="#101841" class="circle right"></circle>
+              </g>
+            </svg>
           </div>
         </div>
 
@@ -287,33 +146,41 @@
 </template>
 
 <script>
-import {cancelAppointment, getAllAppointment,updateAppointmentStatus,generateReport} from "@/api/appointment";
+import {cancelAppointment,updateAppointmentStatus,generateReport,getAllAppointmentPaginate} from "@/api/appointment";
 import router from "@/router";
 export default {
   name: "AppointmentList",
   data(){
       return {
         appointments : null,
-        completed : null,
-        canceled : null,
-        new : null,
+        internal_loader : true,
+        status : 'ALL',
         notifications : null,
         active_appointment : null,
         error : "",
+        // For Pagination
+        perPage: 10,
+        page: 1,
+        total: 0
       }
   },
+  watch: {
+    perPage: 'fetchData',
+    page: 'fetchData'
+  },
   methods :{
-    async AllAppointment() {
-      this.appointments = await getAllAppointment();
-      this.completed = this.appointments.Completed.data;
-      this.canceled = this.appointments.Canceled.data;
-      this.new = this.appointments.Unscheduled.data;
-      this.appointments = this.appointments.All.data;
+    async fetchAppointments() {
+      this.internal_loader = true;
+      this.appointments = await getAllAppointmentPaginate(this.status,this.perPage,this.page);
+      this.internal_loader = false;
     },
     async printReport(appointmentId) {
-      let reportId = await generateReport(appointmentId);
-      if(reportId.data){
-        window.open(process.env.VUE_APP_API_URL + process.env.VUE_APP_GET_PRESCRIPTION +reportId.data , '_blank');
+      let reportData = await generateReport(appointmentId);
+      if(!reportData.fileURL){
+        this.error = reportData.status.message.details;
+      }
+      if(reportData.fileURL){
+        window.open(reportData.fileURL , '_blank');
       }
     },
     async functionCall(me,appointmentId){
@@ -331,7 +198,7 @@ export default {
       let appointment_status = await cancelAppointment(appointmentId);
       if(appointment_status.status.message.code == 'SUCCESS'){
         document.getElementById('btn-close').click();
-        this.AllAppointment()
+        this.fetchAppointments()
       }
       else{
         console.log(appointment_status);
@@ -339,15 +206,54 @@ export default {
     },
     sendData(item) {
       this.active_appointment = item;
+    },
+    appointmentStatus(){
+      if(event.target.classList.contains('ALL')){
+        this.status = 'ALL';
+      }
+      else if(event.target.classList.contains('COMPLETE')){
+        this.status = "COMPLETE"
+      }
+      else if(event.target.classList.contains('UNSCHEDULED')){
+        this.status = "UNSCHEDULED"
+      }
+      else if(event.target.classList.contains('CANCELLED')){
+        this.status = "CANCELLED"
+      }
+      this.fetchAppointments();
     }
   },
   mounted() {
-    this.AllAppointment()
+    this.fetchAppointments()
   }
 }
 </script>
 
 <style scoped>
+.internal_loader{
+  top: 30%;
+  left: 0;
+}
+.loader{
+  margin-top: 150px;
+}
+.circle {
+  animation: move571 4s linear infinite;
+}
+
+.circle.right {
+  animation-direction: reverse;
+}
+
+@keyframes move571 {
+  25% {
+    transform: translateX(-32px);
+  }
+
+  75% {
+    transform: translateX(32px);
+  }
+}
   .list_header{
     display: flex;
     justify-content: space-between;
